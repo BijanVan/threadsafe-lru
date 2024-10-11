@@ -634,4 +634,51 @@ mod tests {
         let new_cache: LruCache<i32, i32> = LruCache::new(shards_count, cap_per_shard);
         assert_eq!(new_cache.len(), 0);
     }
+
+    #[test]
+    fn test_concurrent_access() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let shards_count = 4;
+        let cap_per_shard = 2;
+
+        let cache: Arc<LruCache<i32, i32>> = Arc::new(LruCache::new(shards_count, cap_per_shard));
+
+        const THREAD_COUNT: usize = 10;
+        const OPERATIONS_PER_THREAD: usize = 100;
+
+        let mut handles = vec![];
+
+        for _ in 0..THREAD_COUNT {
+            let cache = Arc::clone(&cache);
+
+            let handle = thread::spawn(move || {
+                for _ in 0..OPERATIONS_PER_THREAD {
+                    let key = rand::random::<i32>();
+                    let value = rand::random::<i32>();
+
+                    let op_type = rand::random::<u8>() % 3;
+                    match op_type {
+                        0 => {
+                            cache.insert(key, value);
+                        }
+                        1 => {
+                            cache.get(&key);
+                        }
+                        2 => {
+                            cache.remove(&key);
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            });
+
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }
