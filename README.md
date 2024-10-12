@@ -38,7 +38,7 @@ This implementation ensures that operations on different keys can be performed c
 
 ## API Documentation
 
-For detailed documentation, including all methods and usage examples, refer to the [LruCache API on docs.rs](https://docs.rs/threadsafe-lru/latest/lrucache/).
+For detailed documentation, including all methods and usage examples, refer to the [LruCache API on docs.rs](https://docs.rs/threadsafe-lru/latest/threadsafe_lru/).
 
 ## Testing
 
