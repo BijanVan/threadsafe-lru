@@ -210,8 +210,15 @@ where
         match index {
             Some(index) => {
                 shard.order.remove(index);
-                shard.order.push_back(k.to_owned());
-                shard.entries.get(k).map(|e| e.1.clone())
+                let index = shard.order.push_back(k.to_owned());
+                let entry = shard.entries.remove(k);
+                match entry {
+                    Some(e) => {
+                        shard.entries.insert(k.to_owned(), (index, e.1.clone()));
+                        Some(e.1)
+                    }
+                    None => None,
+                }
             }
             None => None,
         }
@@ -261,7 +268,11 @@ where
         let index = shard.entries.get(k).map(|e| e.0);
         if let Some(index) = index {
             shard.order.remove(index);
-            shard.order.push_back(k.to_owned());
+            let index = shard.order.push_back(k.to_owned());
+            let entry = shard.entries.remove(k);
+            if let Some(e) = entry {
+                shard.entries.insert(k.to_owned(), (index, e.1));
+            }
             func(shard.entries.get_mut(k).map(|e| &mut e.1));
         }
     }
@@ -353,10 +364,11 @@ where
         Q: Hash + Eq + ?Sized + ToOwned<Owned = K>,
     {
         let mut shard = self.shards[self.shard(k)].lock().unwrap();
-        let index = shard.entries.get(k).map(|v| v.0);
-        if let Some(index) = index {
-            shard.order.remove(index);
-            shard.order.push_back(k.to_owned());
+        let entry = shard.entries.remove(k);
+        if let Some(entry) = entry {
+            shard.order.remove(entry.0);
+            let index = shard.order.push_back(k.to_owned());
+            shard.entries.insert(k.to_owned(), (index, entry.1));
         }
     }
 
